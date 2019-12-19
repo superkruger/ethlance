@@ -19,11 +19,20 @@
 (defn handle-event-test [_ {:keys [args] :as event}]
   (log/info (str "Event Handled " (pr-str event))))
 
+(defn handle-bounty-issued [_ {:keys [args] :as event}]
+  (log/info (str "Handling event  handle-bounty-issued" args))
+  )
+
+(defn handle-bounty-approvers-updated [_ {:keys [args] :as event}]
+  (log/info (str "Handling event  handle-bounty-approvers-updated") args)
+  )
 
 (defn start []
   (log/debug "Starting Syncer...")
   ;; Uncomment once we have deployed registry contract
   ;; (register-callback! :ethlance-registry/ethlance-event handle-event-test ::EthlanceEvent)
+  (register-callback! :standard-bounties/bounty-issued handle-bounty-issued :BountyIssued)
+  (register-callback! :standard-bounties/bounty-approvers-updated handle-bounty-approvers-updated :BountyApproversUpdated)
   )
 
 

@@ -47,9 +47,14 @@
 (def default-config
   {;;:web3 {:port 8549}
 
-   ;; :web3-events {:events {:ethlance-registry/ethlance-event [:ethlance-registry :EthlanceEvent {} {:from-block 0 :to-block "latest"}]}
-   ;;               :write-events-into-file? true
-   ;;               :file-path "ethlance-events.log"}
+   :web3-events {:events {
+                          ;; Uncomment once we have deployed registry contract
+                          ;; :ethlance-registry/ethlance-event [:ethlance-registry :EthlanceEvent {} {:from-block 0 :to-block "latest"}]
+                          :standard-bounties/bounty-issued [:standard-bounties :BountyIssued {} {:from-block 0 :to-block "latest"}]
+                          :standard-bounties/bounty-approvers-updated [:standard-bounties :BountyApproversUpdated {} {:from-block 0 :to-block "latest"}]
+                          }
+                 :write-events-into-file? true
+                 :file-path "ethlance-events.log"}
 
    ;; :smart-contracts {:contracts-var contracts-var
    ;;                   :print-gas-usage? false

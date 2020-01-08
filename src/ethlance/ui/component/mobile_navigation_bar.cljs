@@ -52,7 +52,7 @@
     (fn []
       [:div.mobile-navigation-bar
        [:div.logo
-        [c-ethlance-logo {:color :white :size :small}]]
+        [c-ethlance-logo {:color :white :size :small :inline? false}]]
        [:div.menu-button
         [c-icon {:name (if @*open? :close :list-menu)
                  :color :white

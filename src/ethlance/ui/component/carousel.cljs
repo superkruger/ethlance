@@ -1,5 +1,6 @@
 (ns ethlance.ui.component.carousel
   (:require
+   [react-transition-group :refer [CSSTransition]]
    [reagent.core :as r]
    
    ;; Ethlance Components
@@ -31,9 +32,8 @@
    [c-feedback-slide feedback-2]]
   ```
   "
-  [{:keys [default-index]
-    :or {default-index 0}
-    :as opts} & children]
+  [{:keys [default-index] :or {default-index 0} :as opts}
+   children]
   (let [*current-index (r/atom default-index)]
     (r/create-class
      {:display-name "ethlance-carousel"
@@ -44,11 +44,13 @@
           [:div.ethlance-carousel
            [:div.slide-listing
             (when-not first-slide?
-              [:div.left-slide])
+              [:div.left-slide
+               (nth children (dec @*current-index))])
             [:div.current-slide
              (nth children @*current-index)]
             (when-not last-slide?
-              [:div.right-slide])]
+              [:div.right-slide
+               (nth children (inc @*current-index))])]
            [:div.button-listing
             [:div.back-button
              [c-circle-icon-button

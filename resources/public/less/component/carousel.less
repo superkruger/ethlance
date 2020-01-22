@@ -12,7 +12,13 @@
 //
 
 @keyframes left-slide-enter {
-  
+  from {
+    opacity: 0.0;
+  }
+
+  to {
+    opacity: 1.0;
+  }
 }
 
 @keyframes left-slide-exit {
@@ -74,16 +80,50 @@
       grid-area: left;
       position: absolute;
       left: #carousel[slide-width] / -2;
-      opacity: #carousel[hidden-slide-opacity];
+      transition: all 0.5s;
 
       @media #media[tablet-query] {
         display: none;
         grid-area: none;
       }
+
+      &-enter {
+        opacity: 0.0;
+      }
+
+      &-enter-active {
+        opacity: #carousel[hidden-slide-opacity];
+      }
+
+      &-exit {
+        opacity: 1.0;
+      }
+
+      &-exit-active {
+        opacity: 0.0; 
+      }
     }
+
+    
 
     > .current-slide {
       grid-area: current;
+
+      &-enter {
+        
+      }
+
+      &-enter-active {
+        
+      }
+
+      &-exit {
+        
+      }
+
+      &-exit-active {
+        
+      }
     }
 
     > .right-slide {
@@ -95,6 +135,22 @@
       @media #media[tablet-query] {
         display: none;
         grid-area: none;
+      }
+
+      &-enter {
+        
+      }
+
+      &-enter-active {
+        
+      }
+
+      &-exit {
+        
+      }
+
+      &-exit-active {
+        
       }
     }
   }

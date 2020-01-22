@@ -1,6 +1,6 @@
 (ns ethlance.ui.component.carousel
   (:require
-   [react-transition-group :refer [CSSTransition]]
+   [react-transition-group :refer [CSSTransition TransitionGroup]]
    [reagent.core :as r]
    
    ;; Ethlance Components
@@ -8,6 +8,9 @@
    [ethlance.ui.component.circle-button :refer [c-circle-icon-button]]
    [ethlance.ui.component.profile-image :refer [c-profile-image]]
    [ethlance.ui.component.rating :refer [c-rating]]))
+
+
+(def animation-duration 500) ;; ms
 
 
 (defn c-carousel
@@ -42,15 +45,29 @@
         (let [first-slide? (<= @*current-index 0)
               last-slide? (>= @*current-index (dec (count children)))]
           [:div.ethlance-carousel
-           [:div.slide-listing
+           [:> TransitionGroup
+            {:component "div"
+             :className "slide-listing"}
             (when-not first-slide?
-              [:div.left-slide
-               (nth children (dec @*current-index))])
-            [:div.current-slide
-             (nth children @*current-index)]
+              [:> CSSTransition
+               {:in first-slide?
+                :timeout animation-duration
+                :classNames "left-slide"}
+               [:div.left-slide (nth children (dec @*current-index))]])
+
+            [:> CSSTransition
+             {:in true
+              :timeout animation-duration
+              :classNames "current-slide"}
+             [:div.current-slide (nth children @*current-index)]]
+
             (when-not last-slide?
-              [:div.right-slide
-               (nth children (inc @*current-index))])]
+              [:> CSSTransition
+               {:in last-slide?
+                :timeout animation-duration
+                :classNames "right-slide"}
+               [:div.right-slide (nth children (inc @*current-index))]])]
+
            [:div.button-listing
             [:div.back-button
              [c-circle-icon-button

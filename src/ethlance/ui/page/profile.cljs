@@ -180,11 +180,11 @@
     [:div.title "Feedback"]
     [:div.sub-title "Smart Contract Hacker"]
     [c-carousel {}
-     [c-feedback-slide {:rating 1}]
-     [c-feedback-slide {:rating 2}]
-     [c-feedback-slide {:rating 3}]
-     [c-feedback-slide {:rating 4}]
-     [c-feedback-slide {:rating 5}]]]])
+     [[c-feedback-slide {:rating 1}]
+      [c-feedback-slide {:rating 2}]
+      [c-feedback-slide {:rating 3}]
+      [c-feedback-slide {:rating 4}]
+      [c-feedback-slide {:rating 5}]]]]])
 
 
 (defn c-arbiter-profile []

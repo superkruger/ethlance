@@ -1,17 +1,56 @@
 /// carousel.less -- Styling for the carousel component
 
 
+#carousel() {
+  animation-duration: 0.5s;
+  hidden-slide-opacity: 0.2;
+  slide-width: #media[mobile-width];
+}
+
+//
+// Carousel Animations
+//
+
+@keyframes left-slide-enter {
+  
+}
+
+@keyframes left-slide-exit {
+  
+}
+
+@keyframes current-slide-exit-left {
+  
+}
+
+@keyframes current-slide-exit-right {
+  
+}
+
+@keyframes right-slide-enter {
+  
+}
+
+@keyframes right-slide-exit {
+  
+}
+
+
 .ethlance-carousel {
   position: relative;
 
   > .slide-listing {
+    @current-slide-width: #carousel[slide-width];
+    @side-slide-width: @current-slide-width / 2;
+
     position: relative;
     display: grid;
-    grid-template-areas: 'left current right';
+    grid-template-areas: 'left . current . right';
     grid-template-rows: auto;
-    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-columns: auto @side-slide-width @current-slide-width @side-slide-width auto;
 
     height: 300px;
+    width: 100%;
     overflow: hidden;
 
     @media #media[tablet-query] {
@@ -29,16 +68,13 @@
       color: white;
       border-radius: 1em;
       height: 100%;
-      width: 100%;
     }
-
-    @hidden-slide-opacity: 0.2;
 
     > .left-slide {
       grid-area: left;
       position: absolute;
-      left: -25%;
-      opacity: @hidden-slide-opacity;
+      left: #carousel[slide-width] / -2;
+      opacity: #carousel[hidden-slide-opacity];
 
       @media #media[tablet-query] {
         display: none;
@@ -53,8 +89,8 @@
     > .right-slide {
       grid-area: right;
       position: absolute;
-      right: -25%;
-      opacity: @hidden-slide-opacity;
+      right: #carousel[slide-width] / -2;
+      opacity: #carousel[hidden-slide-opacity];
 
       @media #media[tablet-query] {
         display: none;
@@ -74,7 +110,6 @@
     left: 0;
     right: 0;
     bottom: 0;
-    
     color: white;
 
     //TODO: replace mobile queries with a mobile button listing.
@@ -104,6 +139,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  width: #carousel[slide-width];
 
   > .profile-image {
     margin: 0.5em 0;

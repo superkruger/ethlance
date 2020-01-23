@@ -37,48 +37,67 @@
   "
   [{:keys [default-index] :or {default-index 0} :as opts}
    children]
-  (let [*current-index (r/atom default-index)]
+  (let [*slide-direction (r/atom :left)
+        *current-index (r/atom default-index)]
     (r/create-class
      {:display-name "ethlance-carousel"
       :reagent-render
       (fn [opts & children]
         (let [first-slide? (<= @*current-index 0)
-              last-slide? (>= @*current-index (dec (count children)))]
+              last-slide? (>= @*current-index (dec (count children)))
+              slide-direction-class (case @*slide-direction
+                                      :left "animate-left"
+                                      :right "animate-right")]
           [:div.ethlance-carousel
            [:> TransitionGroup
             {:component "div"
              :className "slide-listing"}
             (when-not first-slide?
               [:> CSSTransition
-               {:in first-slide?
+               {:key (str "left-slide-" (dec @*current-index))
+                :in first-slide?
                 :timeout animation-duration
                 :classNames "left-slide"}
-               [:div.left-slide (nth children (dec @*current-index))]])
+               [:div.left-slide
+                {:class slide-direction-class}
+                (nth children (dec @*current-index))]])
 
             [:> CSSTransition
-             {:in true
+             {:key (str "current-slide-" @*current-index)
+              :in true
               :timeout animation-duration
               :classNames "current-slide"}
-             [:div.current-slide (nth children @*current-index)]]
+             [:div.current-slide
+              {:class slide-direction-class}
+              (nth children @*current-index)]]
 
             (when-not last-slide?
               [:> CSSTransition
-               {:in last-slide?
+               {:key (str "left-slide-" (inc @*current-index))
+                :in last-slide?
                 :timeout animation-duration
                 :classNames "right-slide"}
-               [:div.right-slide (nth children (inc @*current-index))]])]
+               [:div.right-slide
+                {:class slide-direction-class}
+                (nth children (inc @*current-index))]])]
 
            [:div.button-listing
             [:div.back-button
              [c-circle-icon-button
               {:name :ic-arrow-left
                :hide? first-slide?
-               :on-click #(swap! *current-index dec)}]]
+               :on-click 
+               (fn []
+                 (reset! *slide-direction :left)
+                 (swap! *current-index dec))}]]
             [:div.forward-button
              [c-circle-icon-button
               {:name :ic-arrow-right
                :hide? last-slide?
-               :on-click #(swap! *current-index inc)}]]]]))})))
+               :on-click
+               (fn []
+                 (reset! *slide-direction :right)
+                 (swap! *current-index inc))}]]]]))})))
 
 
 (defn c-feedback-slide

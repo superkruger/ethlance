@@ -17,7 +17,7 @@
   }
 
   to {
-    opacity: 1.0;
+    opacity: #carousel[hidden-slide-opacity];
   }
 }
 
@@ -80,27 +80,67 @@
       grid-area: left;
       position: absolute;
       left: #carousel[slide-width] / -2;
-      transition: all 0.5s;
+      transition: all #carousel[animation-duration];
+      opacity: 0.0;
 
       @media #media[tablet-query] {
         display: none;
         grid-area: none;
       }
 
-      &-enter {
-        opacity: 0.0;
+      &.animate-left {
+        &-enter {
+          opacity: 0.0;
+          left: - #carousel[slide-width];
+        }
+
+        &-enter-active {
+          opacity: #carousel[hidden-slide-opacity];
+          left: #carousel[slide-width] / -2;
+        }
+
+        &-enter-done {
+          opacity: #carousel[hidden-slide-opacity];
+          left: #carousel[slide-width] / -2;
+        }
+
+        &-exit {
+
+        }
+
+        &-exit-active {
+          
+        }
+
+        &-exit-done {
+
+        }
       }
 
-      &-enter-active {
-        opacity: #carousel[hidden-slide-opacity];
-      }
+      &.animate-right {
+        &-enter {
 
-      &-exit {
-        opacity: 1.0;
-      }
+        }
 
-      &-exit-active {
-        opacity: 0.0; 
+        &-enter-active {
+
+        }
+
+        &-enter-done {
+
+        }
+
+        &-exit {
+
+        }
+
+        &-exit-active {
+          
+        }
+
+        &-exit-done {
+
+        }
       }
     }
 
@@ -109,20 +149,56 @@
     > .current-slide {
       grid-area: current;
 
-      &-enter {
-        
+      &.animate-left {
+        &-enter {
+
+        }
+
+        &-enter-active {
+
+        }
+
+        &-enter-done {
+
+        }
+
+        &-exit {
+
+        }
+
+        &-exit-active {
+          
+        }
+
+        &-exit-done {
+
+        }
       }
 
-      &-enter-active {
-        
-      }
+      &.animate-right {
+        &-enter {
 
-      &-exit {
-        
-      }
+        }
 
-      &-exit-active {
-        
+        &-enter-active {
+
+        }
+
+        &-enter-done {
+
+        }
+
+        &-exit {
+
+        }
+
+        &-exit-active {
+          
+        }
+
+        &-exit-done {
+
+        }
       }
     }
 
@@ -137,20 +213,56 @@
         grid-area: none;
       }
 
-      &-enter {
-        
+      &.animate-left {
+        &-enter {
+
+        }
+
+        &-enter-active {
+
+        }
+
+        &-enter-done {
+
+        }
+
+        &-exit {
+
+        }
+
+        &-exit-active {
+          
+        }
+
+        &-exit-done {
+
+        }
       }
 
-      &-enter-active {
-        
-      }
+      &.animate-right {
+        &-enter {
 
-      &-exit {
-        
-      }
+        }
 
-      &-exit-active {
-        
+        &-enter-active {
+
+        }
+
+        &-enter-done {
+
+        }
+
+        &-exit {
+
+        }
+
+        &-exit-active {
+          
+        }
+
+        &-exit-done {
+
+        }
       }
     }
   }

@@ -31,8 +31,8 @@
 
   ```clojure
   [c-carousel {}
-   [c-feedback-slide feedback-1]
-   [c-feedback-slide feedback-2]]
+   [[c-feedback-slide feedback-1]
+    [c-feedback-slide feedback-2]]]
   ```
   "
   [{:keys [default-index] :or {default-index 0} :as opts}

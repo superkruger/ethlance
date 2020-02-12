@@ -7,263 +7,28 @@
   slide-width: #media[mobile-width];
 }
 
-//
-// Carousel Animations
-//
-
-@keyframes left-slide-enter {
-  from {
-    opacity: 0.0;
-  }
-
-  to {
-    opacity: #carousel[hidden-slide-opacity];
-  }
-}
-
-@keyframes left-slide-exit {
-  
-}
-
-@keyframes current-slide-exit-left {
-  
-}
-
-@keyframes current-slide-exit-right {
-  
-}
-
-@keyframes right-slide-enter {
-  
-}
-
-@keyframes right-slide-exit {
-  
-}
-
-
 .ethlance-carousel {
   position: relative;
+  display: grid;
 
   > .slide-listing {
-    @current-slide-width: #carousel[slide-width];
-    @side-slide-width: @current-slide-width / 2;
-
     position: relative;
-    display: grid;
-    grid-template-areas: 'left . current . right';
-    grid-template-rows: auto;
-    grid-template-columns: auto @side-slide-width @current-slide-width @side-slide-width auto;
-
+    display: flex;
+    scroll-behavior: smooth;
     height: 300px;
     width: 100%;
-    overflow: hidden;
+    overflow: scroll;
 
     @media #media[tablet-query] {
-      grid-template-areas: 'current';
-      grid-template-columns: auto;
       margin: 0 3em;
     }
 
-    > .left-slide , > .current-slide , > .right-slide {
+    > .slide-element {
       display: flex;
       z-index: 100;
       align-items: center;
       justify-content: center;
-      background-color: #color[dark-blue];
-      color: white;
-      border-radius: 1em;
       height: 100%;
-    }
-
-    > .left-slide {
-      grid-area: left;
-      position: absolute;
-      left: #carousel[slide-width] / -2;
-      transition: all #carousel[animation-duration];
-      opacity: 0.0;
-
-      @media #media[tablet-query] {
-        display: none;
-        grid-area: none;
-      }
-
-      &.animate-left {
-        &-enter {
-          opacity: 0.0;
-          left: - #carousel[slide-width];
-        }
-
-        &-enter-active {
-          opacity: #carousel[hidden-slide-opacity];
-          left: #carousel[slide-width] / -2;
-        }
-
-        &-enter-done {
-          opacity: #carousel[hidden-slide-opacity];
-          left: #carousel[slide-width] / -2;
-        }
-
-        &-exit {
-
-        }
-
-        &-exit-active {
-          
-        }
-
-        &-exit-done {
-
-        }
-      }
-
-      &.animate-right {
-        &-enter {
-
-        }
-
-        &-enter-active {
-
-        }
-
-        &-enter-done {
-
-        }
-
-        &-exit {
-
-        }
-
-        &-exit-active {
-          
-        }
-
-        &-exit-done {
-
-        }
-      }
-    }
-
-    
-
-    > .current-slide {
-      grid-area: current;
-
-      &.animate-left {
-        &-enter {
-
-        }
-
-        &-enter-active {
-
-        }
-
-        &-enter-done {
-
-        }
-
-        &-exit {
-
-        }
-
-        &-exit-active {
-          
-        }
-
-        &-exit-done {
-
-        }
-      }
-
-      &.animate-right {
-        &-enter {
-
-        }
-
-        &-enter-active {
-
-        }
-
-        &-enter-done {
-
-        }
-
-        &-exit {
-
-        }
-
-        &-exit-active {
-          
-        }
-
-        &-exit-done {
-
-        }
-      }
-    }
-
-    > .right-slide {
-      grid-area: right;
-      position: absolute;
-      right: #carousel[slide-width] / -2;
-      opacity: #carousel[hidden-slide-opacity];
-
-      @media #media[tablet-query] {
-        display: none;
-        grid-area: none;
-      }
-
-      &.animate-left {
-        &-enter {
-
-        }
-
-        &-enter-active {
-
-        }
-
-        &-enter-done {
-
-        }
-
-        &-exit {
-
-        }
-
-        &-exit-active {
-          
-        }
-
-        &-exit-done {
-
-        }
-      }
-
-      &.animate-right {
-        &-enter {
-
-        }
-
-        &-enter-active {
-
-        }
-
-        &-enter-done {
-
-        }
-
-        &-exit {
-
-        }
-
-        &-exit-active {
-          
-        }
-
-        &-exit-done {
-
-        }
-      }
     }
   }
 
@@ -308,6 +73,10 @@
   justify-content: center;
   align-items: center;
   width: #carousel[slide-width];
+  height: 100%;
+  background-color: #color[dark-blue];
+  color: white;
+  border-radius: 1em;
 
   > .profile-image {
     margin: 0.5em 0;

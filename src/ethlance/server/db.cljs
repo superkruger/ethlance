@@ -362,6 +362,7 @@
      [:message/creator address]
      [:message/text :varchar]
      [:message/date-created :unsigned :integer]
+     ;; proposal, invitation, raised dispute, resolved dispute, feedback, invoice, direct message, job story message
      [:message/type :varchar not-nil]
      ;; PK
      [(sql/call :primary-key :message/id)]
@@ -580,6 +581,9 @@
               :upsert {:on-conflict [:user/address]
                        :do-update-set (keys values)}})))
 
+(defn get-last-insert-id []
+  (:id (db/get {:select [[(sql/call :last_insert_rowid) :id]] })))
+
 (defn add-job [job creators]
   (insert-row! :Job job)
   (doseq [user-address creators]
@@ -587,7 +591,32 @@
                               :user/address user-address})))
 
 (defn update-job-data [job-data]
-  (update-row! :Job job))
+  (update-row! :Job job-data))
+
+(defn add-invoice [invoice]
+  (insert-row! :Invoice invoice))
+
+(defn add-message
+  "Inserts a Message. Returns autoincrement id"
+  [message]
+  (insert-row! :Message message)
+  (get-last-insert-id))
+
+(defn add-job-story
+  "Inserts a JobStory. Returns autoincrement id"
+  [job-story]
+  (insert-row! :JobStory job-story)
+  (get-last-insert-id))
+
+(defn add-job-story-message [job-story-message]
+  (insert-row! :JobStoryMessage job-story-message))
+
+(defn add-message-file [message-id {:keys [:file/name :file/hash :file/directory-hash] :as file}]
+  (let [file-id (do
+                  (insert-row! :File file)
+                  (get-last-insert-id))]
+    (insert-row! :MessageFile {:message/id message-id
+                               :file/id file-id})))
 
 (defn start
   "Start the ethlance-db mount component."

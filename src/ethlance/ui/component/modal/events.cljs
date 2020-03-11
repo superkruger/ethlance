@@ -1,4 +1,5 @@
 (ns ethlance.ui.component.modal.events
+  "Reframe Event Handlers for Modal Component"
   (:require
    [re-frame.core :as re]))
 

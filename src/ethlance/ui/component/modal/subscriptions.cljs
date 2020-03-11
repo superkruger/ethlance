@@ -1,4 +1,5 @@
 (ns ethlance.ui.component.modal.subscriptions
+  "Reframe Event Subscriptions for Modal Component"
   (:require
    [re-frame.core :as re]))
 

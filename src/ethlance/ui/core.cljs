@@ -17,6 +17,7 @@
    [ethlance.ui.util.injection :as util.injection]
    [ethlance.ui.events]
    [ethlance.ui.effects]
+   [ethlance.ui.coeffects]
    [ethlance.ui.subscriptions]))
 
 (enable-console-print!)

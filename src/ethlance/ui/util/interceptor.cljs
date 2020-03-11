@@ -17,12 +17,7 @@
 
    - Functionally equivalent to `trim-event` example in re-frame docs
   "
-  (re/->interceptor
-   :id :trim-event
-   :before
-   (fn [context]
-     (let [trim-fn (fn [event] (-> event rest vec))]
-       (update-in context [:coeffects :event] trim-fn)))))
+  re/trim-v)
 
 
 (def unbox-event
@@ -61,7 +56,7 @@
   [spec & [index]]
   (let []
     (re/->interceptor
-     :id :conform-argument
+     :id :spec-conform
      :before
      (fn [context]
        (let [index (or index 0)

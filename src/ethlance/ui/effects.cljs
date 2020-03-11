@@ -2,7 +2,7 @@
   (:require [cljs-web3.core :as web3.core]
             [re-frame.core :as re]))
 
-;; TODO : move this to maybe re-frame-web3-fx
+;; TODO: move this to maybe re-frame-web3-fx
 (re/reg-fx
  :web3/personal-sign
  (fn [{:keys [web3 data-str from on-success on-error]}]
@@ -14,4 +14,4 @@
                 (fn [err result]
                   (if err
                     (re-frame/dispatch (conj on-error err))
-                    (re-frame/dispatch (conj on-success (.-result result)))))))))
+                    (re-frame/dispatch (conj on-success (aget result "result")))))))))

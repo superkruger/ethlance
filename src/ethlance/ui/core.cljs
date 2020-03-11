@@ -33,7 +33,10 @@
 
     ;; Mount our components
     (-> (mount/with-args main-config)
-        (mount/start))))
+        (mount/start))
+
+    ;; Do re-frame initialization
+    (re/dispatch-sync [:ethlance/init])))
 
 
 (defonce started? (init))

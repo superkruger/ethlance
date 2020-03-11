@@ -43,9 +43,9 @@
   (-> (graphql-ui-utils/parse-query
        {:queries [query]}
        {:kw->gql-name graphql-utils/kw->gql-name})
-      :query-str))
+      :query-str)
 
-
+  store)
 (defn authenticate
   "Event FX Handler. Authenticate the sign in for the given active account."
   [{:keys [db] :as cofxs} [_ {:keys [active-account data-str]} data-signature]]

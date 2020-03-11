@@ -7,6 +7,7 @@
    [ethlance.ui.component.modal.events]
 
    ;; Ethlance Main Event Handlers
+   [ethlance.ui.event.core] ;; init events
    [ethlance.ui.event.sign-in]))
 
 

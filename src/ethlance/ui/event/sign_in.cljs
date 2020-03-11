@@ -4,6 +4,7 @@
    [re-frame.core :as re]
    [ajax.core :as ajax]
    [day8.re-frame.http-fx]
+   [taoensso.timbre :as log]
    
    [district.ui.graphql.utils :as graphql-ui-utils]
    [district.graphql-utils :as graphql-utils]
@@ -11,7 +12,8 @@
    [district.ui.logging.events :as logging.events]
    [district.ui.web3-accounts.queries :as account-queries]
 
-   [ethlance.ui.config :as config]))
+   [ethlance.ui.config :as config]
+   [ethlance.ui.util.interceptor :as util.int]))
 
 
 (defn sign-in
@@ -34,7 +36,7 @@
       :on-error [::logging.events/error "Error Signing with Active Ethereum Account."]}}))
 
 
-(defn- parse-query 
+(defn parse-query 
   "Helper function for performing a graphql query. Returns the generated
   graphql query string."
   [query]

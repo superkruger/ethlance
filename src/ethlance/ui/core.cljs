@@ -1,4 +1,5 @@
 (ns ethlance.ui.core
+  "Web Application Entry Point"
   (:require
    [mount.core :as mount :refer [defstate]]
    [re-frame.core :as re]
@@ -18,15 +19,19 @@
    [ethlance.ui.effects]
    [ethlance.ui.subscriptions]))
 
-
 (enable-console-print!)
 
-
-(defn ^:export init []
+(defn ^:export init
+  "Main Entry Point function for ethlance ui"
+  []
   (let [main-config (ui.config/get-config)]
     (.log js/console "Initializing...")
     (.log js/console (clj->js main-config))
+
+    ;; Setup data-scroll attribute on #app dom element
     (util.injection/inject-data-scroll! {:injection-selector "#app"})
+
+    ;; Mount our components
     (-> (mount/with-args main-config)
         (mount/start))))
 

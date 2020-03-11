@@ -8,6 +8,7 @@
 
 
 (def general-config
+  "Main Production Configuration"
   {:logging
    {:level :debug
     :console? true}
@@ -27,6 +28,7 @@
 
 
 (def development-config
+  "Development Configuration"
   (-> general-config
       (assoc-in [:router :routes] ethlance.shared.routes/dev-routes)))
 

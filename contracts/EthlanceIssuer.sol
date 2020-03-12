@@ -1,22 +1,27 @@
 pragma solidity ^0.5.0;
 
 import "./StandardBounties.sol";
+import "./EthlanceJobs.sol";
 import "./token/IERC20.sol";
 import "./token/IERC721.sol";
 
-contract EthlanceBountyIssuer {
+contract EthlanceIssuer {
 
   StandardBounties internal constant standardBounties = StandardBounties(0xfEEDFEEDfeEDFEedFEEdFEEDFeEdfEEdFeEdFEEd);
+  EthlanceJobs internal constant ethlanceJobs = EthlanceJobs(0xfEEDFEEDfeEDFEedFEEdFEEDFeEdfEEdFeEdFEEd);
 
-  struct BountyParams {
+  enum JobType {EthlanceJob, StandardBounty}
+
+  struct TokenParams {
     address token;
     uint tokenVersion;
   }
 
   mapping(address => mapping(uint => uint)) public arbitersFees;
-  mapping(uint => BountyParams) public bounties;
+  mapping(uint => TokenParams) public bounties;
+  mapping(uint => TokenParams) public jobs;
 
-  function transfer(address from, address to, address token, uint tokenVersion, uint depositAmount) private{
+  function transfer(address from, address to, address token, uint tokenVersion, uint depositAmount) private {
     require(depositAmount > 0); // Contributions of 0 tokens or token ID 0 should fail
 
     if (tokenVersion == 0){
@@ -67,7 +72,7 @@ contract EthlanceBountyIssuer {
      address. Also it stores addresses of invited arbiters (approvers)
      and arbiter's fee for created bounty.
   */
-  function issueAndContribute(string memory bountyData, uint deadline, address token, uint tokenVersion, uint depositAmount) public payable{
+  function issueBounty(string memory bountyData, uint deadline, address token, uint tokenVersion, uint depositAmount) public payable{
     address[] memory arbiters=new address [](0);
 
     // EthlanceBountyIssuer is the issuer of all bounties
@@ -88,7 +93,37 @@ contract EthlanceBountyIssuer {
                                                                          tokenVersion,
                                                                          depositAmount);
 
-    bounties[bountyId]=BountyParams(token, tokenVersion);
+    bounties[bountyId]=TokenParams(token, tokenVersion);
+
+  }
+
+  /**
+     This function creates a job in EthlanceJobs contract,
+     passing as issuers addresses of this contract and sender's
+     address. Also it stores addresses of invited arbiters (approvers)
+     and arbiter's fee for created Job.
+  */
+  function issueJob(string memory jobData, uint deadline, address token, uint tokenVersion, uint depositAmount) public payable{
+    address[] memory arbiters=new address [](0);
+
+    // EthlanceBountyIssuer is the issuer of all bounties
+    address payable[] memory issuers=new address payable[](1);
+
+    address payable thisPayable=address(uint160(address(this)));
+    issuers[0]=thisPayable;
+
+    transfer(msg.sender, address(this), token, tokenVersion, depositAmount);
+
+    // Also pass whatever value was sent to us forward
+    uint jobId = ethlanceJobs.issueAndContribute.value(msg.value)(thisPayable,
+                                                                  issuers,
+                                                                  arbiters,
+                                                                  jobData,
+                                                                  token,
+                                                                  tokenVersion,
+                                                                  depositAmount);
+
+    jobs[jobId]=TokenParams(token, tokenVersion);
 
   }
 
@@ -96,21 +131,34 @@ contract EthlanceBountyIssuer {
      Arbiter runs this function to accept invitation. If he's first, it'll
      transfer fee to him and it'll add him as arbiter for the bounty.
   */
-  function acceptArbiterInvitation(uint bountyId) public {
+  function acceptArbiterInvitation(JobType jobType, uint jobId) public {
     // check that it was invited
-    require(arbitersFees[msg.sender][bountyId] > 0);
+    require(arbitersFees[msg.sender][jobId] > 0);
 
     address[] memory arbiters=new address [](1);
     arbiters[0]=msg.sender;
+    address token;
+    uint tokenVersion;
 
-    standardBounties.addApprovers(address(this),
-                                  bountyId,
-                                  0, // since there is only one issuer, it is the first one
-                                  arbiters);
 
-    uint fee=arbitersFees[msg.sender][bountyId];
-    address token=bounties[bountyId].token;
-    uint tokenVersion=bounties[bountyId].tokenVersion;
+    if(jobType==JobType.StandardBounty){
+      standardBounties.addApprovers(address(this),
+                                    jobId,
+                                    0, // since there is only one issuer, it is the first one
+                                    arbiters);
+      token=bounties[jobId].token;
+      tokenVersion=bounties[jobId].tokenVersion;
+
+    }else if(jobType==JobType.EthlanceJob){
+      ethlanceJobs.addApprovers(address(this),
+                                jobId,
+                                0, // since there is only one issuer, it is the first one
+                                arbiters);
+      token=jobs[jobId].token;
+      tokenVersion=jobs[jobId].tokenVersion;
+    }
+
+    uint fee=arbitersFees[msg.sender][jobId];
 
     transfer(address(this), msg.sender, token, tokenVersion, fee);
 

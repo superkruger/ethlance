@@ -1,4 +1,5 @@
 (ns ethlance.ui.util.navigation
+  "Functions for dealing with routes and URLs"
   (:require
    [district.ui.router.events :as router.events]
    [re-frame.core :as re]))
@@ -11,9 +12,9 @@
 
   :route - key of the given route
 
-  :params - Query Parameters for the generated url
+  :params - Keyword Parameters defined in bide route.
 
-  :query - I have no idea.
+  :query - Query Parameters ex. {:foo 123 :bar \"abc\"} --> <url>?foo=123&bar=abc
 
   # Notes
 
@@ -24,7 +25,8 @@
   [{:keys [route params query]}]
   (fn [event]
     (.preventDefault event)
-    (re/dispatch [::router.events/navigate route params query])))
+    (re/dispatch [::router.events/navigate route params query])
+    false))
 
 
 (defn resolve-route

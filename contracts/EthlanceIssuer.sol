@@ -8,7 +8,7 @@ import "./token/IERC721.sol";
 contract EthlanceIssuer {
 
   StandardBounties internal constant standardBounties = StandardBounties(0xfEEDFEEDfeEDFEedFEEdFEEDFeEdfEEdFeEdFEEd);
-  EthlanceJobs internal constant ethlanceJobs = EthlanceJobs(0xfEEDFEEDfeEDFEedFEEdFEEDFeEdfEEdFeEdFEEd);
+  EthlanceJobs internal constant ethlanceJobs = EthlanceJobs(0xdeaDDeADDEaDdeaDdEAddEADDEAdDeadDEADDEaD);
 
   enum JobType {EthlanceJob, StandardBounty}
 
@@ -22,23 +22,23 @@ contract EthlanceIssuer {
   mapping(uint => TokenParams) public jobs;
 
   function transfer(address from, address to, address token, uint tokenVersion, uint depositAmount) private {
-    require(depositAmount > 0); // Contributions of 0 tokens or token ID 0 should fail
+    require(depositAmount > 0, "Insufficient amount"); // Contributions of 0 tokens or token ID 0 should fail
 
     if (tokenVersion == 0){
       if(from==address(this)){
         address payable toPayable=address(uint160(to));
         toPayable.send(depositAmount);
       }else{
-        require(msg.value >= depositAmount);
+        require(msg.value >= depositAmount,"Insuficien ETH");
       }
 
     } else if (tokenVersion == 20){
 
-      require(msg.value == 0); // Ensures users don't accidentally send ETH alongside a token contribution, locking up funds
+      require(msg.value == 0, "No ETH should be provided for ERC20"); // Ensures users don't accidentally send ETH alongside a token contribution, locking up funds
 
-      require(IERC20(token).transferFrom(from,to,depositAmount));
+      require(IERC20(token).transferFrom(from,to,depositAmount), "Couldn't transfer ERC20");
     } else if (tokenVersion == 721){
-      require(msg.value == 0); // Ensures users don't accidentally send ETH alongside a token contribution, locking up funds
+      require(msg.value == 0,"No ETH should be provided for tokenVersion 721"); // Ensures users don't accidentally send ETH alongside a token contribution, locking up funds
       IERC721(token).transferFrom(from,to,depositAmount);
     } else {
       revert();
@@ -103,7 +103,7 @@ contract EthlanceIssuer {
      address. Also it stores addresses of invited arbiters (approvers)
      and arbiter's fee for created Job.
   */
-  function issueJob(string memory jobData, uint deadline, address token, uint tokenVersion, uint depositAmount) public payable{
+  function issueJob(string memory jobData, address token, uint tokenVersion, uint depositAmount) public payable{
     address[] memory arbiters=new address [](0);
 
     // EthlanceBountyIssuer is the issuer of all bounties
@@ -133,7 +133,7 @@ contract EthlanceIssuer {
   */
   function acceptArbiterInvitation(JobType jobType, uint jobId) public {
     // check that it was invited
-    require(arbitersFees[msg.sender][jobId] > 0);
+    require(arbitersFees[msg.sender][jobId] > 0,"Arbiters fees should be greater than zero.");
 
     address[] memory arbiters=new address [](1);
     arbiters[0]=msg.sender;
@@ -149,7 +149,7 @@ contract EthlanceIssuer {
       token=bounties[jobId].token;
       tokenVersion=bounties[jobId].tokenVersion;
 
-    }else if(jobType==JobType.EthlanceJob){
+    } else if (jobType==JobType.EthlanceJob){
       ethlanceJobs.addApprovers(address(this),
                                 jobId,
                                 0, // since there is only one issuer, it is the first one

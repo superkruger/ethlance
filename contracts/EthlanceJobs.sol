@@ -23,7 +23,6 @@ contract EthlanceJobs {
     address token; // The address of the token associated with the job (should be disregarded if the tokenVersion is 0)
     uint tokenVersion; // The version of the token being used for the job (0 for ETH, 20 for ERC20, 721 for ERC721)
     uint balance; // The number of tokens which the job is able to pay out or refund
-    bool hasPaidOut; // A boolean storing whether or not the job has paid out at least once, meaning refunds are no longer allowed
     Fulfillment[] fulfillments; // An array of Fulfillments which store the various submissions which have been made to the job
     Contribution[] contributions; // An array of Contributions which store the contributions which have been made to the job
     address[] hiredCandidates;
@@ -60,7 +59,7 @@ contract EthlanceJobs {
    */
 
   modifier callNotStarted(){
-    require(!callStarted);
+    require(!callStarted, "Mutex error");
     callStarted = true;
     _;
     callStarted = false;
@@ -69,7 +68,7 @@ contract EthlanceJobs {
   modifier validateJobArrayIndex(
                                  uint _index)
   {
-    require(_index < numJobs);
+    require(_index < numJobs, "Array index out of bounds");
     _;
   }
 
@@ -77,7 +76,7 @@ contract EthlanceJobs {
                                           uint _jobId,
                                           uint _index)
   {
-    require(_index < jobs[_jobId].contributions.length);
+    require(_index < jobs[_jobId].contributions.length, "Contribution array index out of bounds");
     _;
   }
 
@@ -85,7 +84,7 @@ contract EthlanceJobs {
                                          uint _jobId,
                                          uint _index)
   {
-    require(_index < jobs[_jobId].fulfillments.length);
+    require(_index < jobs[_jobId].fulfillments.length, "Fulfillment array index out of bounds");
     _;
   }
 
@@ -93,7 +92,7 @@ contract EthlanceJobs {
                                     uint _jobId,
                                     uint _index)
   {
-    require(_index < jobs[_jobId].issuers.length);
+    require(_index < jobs[_jobId].issuers.length, "Issuer array index out of bounds");
     _;
   }
 
@@ -101,7 +100,7 @@ contract EthlanceJobs {
                                       uint _jobId,
                                       uint _index)
   {
-    require(_index < jobs[_jobId].approvers.length);
+    require(_index < jobs[_jobId].approvers.length, "Approvers array index out of bounds");
     _;
   }
 
@@ -110,7 +109,7 @@ contract EthlanceJobs {
                       uint _jobId,
                       uint _issuerId)
   {
-    require(_sender == jobs[_jobId].issuers[_issuerId]);
+    require(_sender == jobs[_jobId].issuers[_issuerId], "Only a issuer can execute this operation");
     _;
   }
 
@@ -120,7 +119,7 @@ contract EthlanceJobs {
                          uint _fulfillmentId)
   {
     require(_sender ==
-            jobs[_jobId].fulfillments[_fulfillmentId].submitter);
+            jobs[_jobId].fulfillments[_fulfillmentId].submitter, "Only a submitter can execute this operation");
     _;
   }
 
@@ -130,7 +129,7 @@ contract EthlanceJobs {
                            uint _contributionId)
   {
     require(_sender ==
-            jobs[_jobId].contributions[_contributionId].contributor);
+            jobs[_jobId].contributions[_contributionId].contributor, "Only a contributor can execute this operation");
     _;
   }
 
@@ -139,14 +138,7 @@ contract EthlanceJobs {
                       uint _jobId,
                       uint _approverId)
   {
-    require(_sender == jobs[_jobId].approvers[_approverId]);
-    _;
-  }
-
-  modifier hasNotPaid(
-                      uint _jobId)
-  {
-    require(!jobs[_jobId].hasPaidOut);
+    require(_sender == jobs[_jobId].approvers[_approverId], "Only an approver can execute this operation");
     _;
   }
 
@@ -154,14 +146,14 @@ contract EthlanceJobs {
                           uint _jobId,
                           uint _contributionId)
   {
-    require(!jobs[_jobId].contributions[_contributionId].refunded);
+    require(!jobs[_jobId].contributions[_contributionId].refunded, "Already refunded");
     _;
   }
 
   modifier senderIsValid(
                          address _sender)
   {
-    require(msg.sender == _sender || msg.sender == metaTxRelayer);
+    require(msg.sender == _sender || msg.sender == metaTxRelayer, "Invalid sender");
     _;
   }
 
@@ -179,12 +171,12 @@ contract EthlanceJobs {
   function setMetaTxRelayer(address _relayer)
     external
   {
-    require(msg.sender == owner); // Checks that only the owner can call
+    require(msg.sender == owner, "Message sender is not the owner of the contract."); // Checks that only the owner can call
     require(metaTxRelayer == address(0)); // Ensures the meta tx relayer can only be set once
     metaTxRelayer = _relayer;
   }
 
-  function contains(address[] memory arr, address x) private returns(bool)
+  function contains(address[] memory arr, address x) private pure returns(bool)
   {
     bool found=false;
     uint i = 0;
@@ -194,7 +186,7 @@ contract EthlanceJobs {
     }
   }
 
-  function selectCandidate(uint jobId, address candidate)
+  function acceptCandidate(uint jobId, address candidate)
     public
   {
     // Validate that candidate is inside candidates that applied for this job
@@ -203,7 +195,7 @@ contract EthlanceJobs {
     // Add the candidate as selected for the job
     jobs[jobId].hiredCandidates.push(candidate);
 
-    emit CandidateSelected(jobId, candidate);
+    emit CandidateAccepted(jobId, candidate);
   }
 
   function applyAsCandidate(uint jobId, address candidate) public {
@@ -220,22 +212,22 @@ contract EthlanceJobs {
   /// @param _sender the sender of the transaction issuing the job (should be the same as msg.sender unless the txn is called by the meta tx relayer)
   /// @param _issuers the array of addresses who will be the issuers of the job
   /// @param _approvers the array of addresses who will be the approvers of the job
-  /// @param _data the IPFS hash representing the JSON object storing the details of the job (see docs for schema details)
+  /// @param _ipfsHash the IPFS hash representing the JSON object storing the details of the job (see docs for schema details)
   /// @param _token the address of the token which will be used for the job
   /// @param _tokenVersion the version of the token being used for the job (0 for ETH, 20 for ERC20, 721 for ERC721)
   function issueJob(
                     address payable _sender,
                     address payable[] memory _issuers,
                     address[] memory _approvers,
-                    string memory _data,
+                    string memory _ipfsHash,
                     address _token,
                     uint _tokenVersion)
     public
     senderIsValid(_sender)
     returns (uint)
   {
-    require(_tokenVersion == 0 || _tokenVersion == 20 || _tokenVersion == 721); // Ensures a job can only be issued with a valid token version
-    require(_issuers.length > 0 || _approvers.length > 0); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
+    require(_tokenVersion == 0 || _tokenVersion == 20 || _tokenVersion == 721, "Incorrect token version"); // Ensures a job can only be issued with a valid token version
+    require(_issuers.length > 0 || _approvers.length > 0, "At least one issuer or approver needed"); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
 
     uint jobId = numJobs; // The next job's index will always equal the number of existing jobs
 
@@ -254,7 +246,7 @@ contract EthlanceJobs {
                    _sender,
                    _issuers,
                    _approvers,
-                   _data, // Instead of storing the string on-chain, it is emitted within the event for easy off-chain consumption
+                   _ipfsHash, // Instead of storing the string on-chain, it is emitted within the event for easy off-chain consumption
                    _token,
                    _tokenVersion);
 
@@ -268,7 +260,7 @@ contract EthlanceJobs {
                               address payable _sender,
                               address payable[] memory _issuers,
                               address[] memory _approvers,
-                              string memory _data,
+                              string memory _ipfsHash,
                               address _token,
                               uint _tokenVersion,
                               uint _depositAmount)
@@ -276,7 +268,7 @@ contract EthlanceJobs {
     payable
     returns(uint)
   {
-    uint jobId = issueJob(_sender, _issuers, _approvers, _data, _token, _tokenVersion);
+    uint jobId = issueJob(_sender, _issuers, _approvers, _ipfsHash, _token, _tokenVersion);
 
     contribute(_sender, jobId, _depositAmount);
 
@@ -303,7 +295,7 @@ contract EthlanceJobs {
     validateJobArrayIndex(_jobId)
     callNotStarted
   {
-    require(_amount > 0); // Contributions of 0 tokens or token ID 0 should fail
+    require(_amount > 0, "Insuficient amount"); // Contributions of 0 tokens or token ID 0 should fail
 
     jobs[_jobId].contributions.push(
                                     Contribution(_sender, _amount, false)); // Adds the contribution to the job
@@ -312,12 +304,12 @@ contract EthlanceJobs {
 
       jobs[_jobId].balance = jobs[_jobId].balance.add(_amount); // Increments the balance of the job
 
-      require(msg.value == _amount);
+      require(msg.value == _amount, "Amount of ETH sent should be the same as _amount");
     } else if (jobs[_jobId].tokenVersion == 20){
 
       jobs[_jobId].balance = jobs[_jobId].balance.add(_amount); // Increments the balance of the job
 
-      require(msg.value == 0); // Ensures users don't accidentally send ETH alongside a token contribution, locking up funds
+      require(msg.value == 0, "No ETH should be provided for ERC20"); // Ensures users don't accidentally send ETH alongside a token contribution, locking up funds
       require(IERC20(jobs[_jobId].token).transferFrom(_sender,
                                                       address(this),
                                                       _amount));
@@ -343,18 +335,19 @@ contract EthlanceJobs {
   ///                            made to a particular job, but only if the job
   ///                            has not yet paid out
   /// @param _sender the sender of the transaction issuing the job (should be the same as msg.sender unless the txn is called by the meta tx relayer)
+  /// @param _issuerId the issuer id for thre job
   /// @param _jobId the index of the job
   /// @param _contributionId the index of the contribution being refunded
   function refundContribution(
                               address _sender,
                               uint _jobId,
+                              uint _issuerId,
                               uint _contributionId)
     public
     senderIsValid(_sender)
     validateJobArrayIndex(_jobId)
     validateContributionArrayIndex(_jobId, _contributionId)
-    onlyContributor(_sender, _jobId, _contributionId)
-    hasNotPaid(_jobId)
+    onlyIssuer(_sender, _jobId, _issuerId)
     hasNotRefunded(_jobId, _contributionId)
     callNotStarted
   {
@@ -375,12 +368,13 @@ contract EthlanceJobs {
   function refundMyContributions(
                                  address _sender,
                                  uint _jobId,
+                                 uint _issuerId,
                                  uint[] memory _contributionIds)
     public
     senderIsValid(_sender)
   {
     for (uint i = 0; i < _contributionIds.length; i++){
-      refundContribution(_sender, _jobId, _contributionIds[i]);
+      refundContribution(_sender, _jobId, _issuerId, _contributionIds[i]);
     }
   }
 
@@ -401,11 +395,11 @@ contract EthlanceJobs {
     callNotStarted
   {
     for (uint i = 0; i < _contributionIds.length; i++){
-      require(_contributionIds[i] < jobs[_jobId].contributions.length);
+      require(_contributionIds[i] < jobs[_jobId].contributions.length, "Contribution ID is begger than contributions");
 
       Contribution storage contribution = jobs[_jobId].contributions[_contributionIds[i]];
 
-      require(!contribution.refunded);
+      require(!contribution.refunded, "Contribution already refunded");
 
       contribution.refunded = true;
 
@@ -433,12 +427,12 @@ contract EthlanceJobs {
     callNotStarted
   {
     if (jobs[_jobId].tokenVersion == 0 || jobs[_jobId].tokenVersion == 20){
-      require(_amounts.length == 1); // ensures there's only 1 amount of tokens to be returned
-      require(_amounts[0] <= jobs[_jobId].balance); // ensures an issuer doesn't try to drain the job of more tokens than their balance permits
+      require(_amounts.length == 1, "Oonly 1 amount of tokens can be returned"); // ensures there's only 1 amount of tokens to be returned
+      require(_amounts[0] <= jobs[_jobId].balance, "Can't drain more than balance"); // ensures an issuer doesn't try to drain the job of more tokens than their balance permits
       transferTokens(_jobId, _sender, _amounts[0]); // Performs the draining of tokens to the issuer
     } else {
       for (uint i = 0; i < _amounts.length; i++){
-        require(tokenBalances[_jobId][_amounts[i]]);// ensures an issuer doesn't try to drain the job of a token it doesn't have in its balance
+        require(tokenBalances[_jobId][_amounts[i]], "Can't drain more than balance");// ensures an issuer doesn't try to drain the job of a token it doesn't have in its balance
         transferTokens(_jobId, _sender, _amounts[i]);
       }
     }
@@ -450,28 +444,28 @@ contract EthlanceJobs {
   ///                       associated with a particular job, such as applying for it
   /// @param _sender the sender of the transaction issuing the job (should be the same as msg.sender unless the txn is called by the meta tx relayer)
   /// @param _jobId the index of the job
-  /// @param _data the IPFS hash corresponding to a JSON object which contains the details of the action being performed (see docs for schema details)
+  /// @param _ipfsHash the IPFS hash corresponding to a JSON object which contains the details of the action being performed (see docs for schema details)
   function performAction(
                          address _sender,
                          uint _jobId,
-                         string memory _data)
+                         string memory _ipfsHash)
     public
     senderIsValid(_sender)
     validateJobArrayIndex(_jobId)
   {
-    emit ActionPerformed(_jobId, _sender, _data); // The _data string is emitted in an event for easy off-chain consumption
+    emit ActionPerformed(_jobId, _sender, _ipfsHash); // The _ipfsHash string is emitted in an event for easy off-chain consumption
   }
 
   /// @dev fulfillJob(): Allows users to fulfill the job to get paid out
   /// @param _sender the sender of the transaction issuing the job (should be the same as msg.sender unless the txn is called by the meta tx relayer)
   /// @param _jobId the index of the job
   /// @param _fulfillers the array of addresses which will receive payouts for the submission
-  /// @param _data the IPFS hash corresponding to a JSON object which contains the details of the submission (see docs for schema details)
+  /// @param _ipfsHash the IPFS hash corresponding to a JSON object which contains the details of the submission (see docs for schema details)
   function fulfillJob(
                       address _sender,
                       uint _jobId,
                       address payable[] memory  _fulfillers,
-                      string memory _data,
+                      string memory _ipfsHash,
                       uint _amount)
     public
     senderIsValid(_sender)
@@ -479,14 +473,14 @@ contract EthlanceJobs {
   {
     require(contains(jobs[_jobId].hiredCandidates, _sender), "Can't fulfill the job. The sender was't selecte for the job");
 
-    require(_fulfillers.length > 0); // Submissions with no fulfillers would mean no one gets paid out
+    require(_fulfillers.length > 0, "Fulfillers es empty"); // Submissions with no fulfillers would mean no one gets paid out
 
     jobs[_jobId].fulfillments.push(Fulfillment(_fulfillers, _sender, _amount));
 
     emit JobFulfilled(_jobId,
                       (jobs[_jobId].fulfillments.length - 1),
                       _fulfillers,
-                      _data, // The _data string is emitted in an event for easy off-chain consumption
+                      _ipfsHash, // The _ipfsHash string is emitted in an event for easy off-chain consumption
                       _sender,
                       _amount);
   }
@@ -496,25 +490,25 @@ contract EthlanceJobs {
   /// @param _jobId the index of the job
   /// @param _fulfillmentId the index of the fulfillment
   /// @param _fulfillers the new array of addresses which will receive payouts for the submission
-  /// @param _data the new IPFS hash corresponding to a JSON object which contains the details of the submission (see docs for schema details)
+  /// @param _ipfsHash the new IPFS hash corresponding to a JSON object which contains the details of the submission (see docs for schema details)
   function updateFulfillment(
                              address _sender,
                              uint _jobId,
                              uint _fulfillmentId,
                              address payable[] memory _fulfillers,
-                             string memory _data)
+                             string memory _ipfsHash)
     public
     senderIsValid(_sender)
     validateJobArrayIndex(_jobId)
     validateFulfillmentArrayIndex(_jobId, _fulfillmentId)
     onlySubmitter(_sender, _jobId, _fulfillmentId) // Only the original submitter of a fulfillment may update their submission
   {
-    // TODO: require the sender to be the selected candidate for the _jobId
+    require(contains(jobs[_jobId].hiredCandidates, _sender), "Can't fulfill the job. The sender was't selecte for the job");
     jobs[_jobId].fulfillments[_fulfillmentId].fulfillers = _fulfillers;
     emit FulfillmentUpdated(_jobId,
                             _fulfillmentId,
                             _fulfillers,
-                            _data); // The _data string is emitted in an event for easy off-chain consumption
+                            _ipfsHash); // The _ipfsHash string is emitted in an event for easy off-chain consumption
   }
 
   /// @dev acceptFulfillment(): Allows any of the approvers to accept a given submission
@@ -540,12 +534,9 @@ contract EthlanceJobs {
     isApprover(_sender, _jobId, _approverId)
     callNotStarted
   {
-    // now that the job has paid out at least once, refunds are no longer possible
-    jobs[_jobId].hasPaidOut = true;
-
     Fulfillment storage fulfillment = jobs[_jobId].fulfillments[_fulfillmentId];
 
-    require(_tokenAmounts.length == fulfillment.fulfillers.length); // Each fulfiller should get paid some amount of tokens (this can be 0)
+    require(_tokenAmounts.length == fulfillment.fulfillers.length, "Token amounts should be the same lenght as fulfillers"); // Each fulfiller should get paid some amount of tokens (this can be 0)
 
     for (uint256 i = 0; i < fulfillment.fulfillers.length; i++){
       if (_tokenAmounts[i] > 0){
@@ -563,7 +554,7 @@ contract EthlanceJobs {
   /// @param _sender the sender of the transaction issuing the job (should be the same as msg.sender unless the txn is called by the meta tx relayer)
   /// @param _jobId the index of the job
   /// @param _fulfillers the array of addresses which will receive payouts for the submission
-  /// @param _data the IPFS hash corresponding to a JSON object which contains the details of the submission (see docs for schema details)
+  /// @param _ipfsHash the IPFS hash corresponding to a JSON object which contains the details of the submission (see docs for schema details)
   /// @param _approverId the index of the approver which is making the call
   /// @param _tokenAmounts the array of token amounts which will be paid to the
   ///                      fulfillers, whose length should equal the length of the
@@ -574,7 +565,7 @@ contract EthlanceJobs {
                             address _sender,
                             uint _jobId,
                             address payable[] memory _fulfillers,
-                            string memory _data,
+                            string memory _ipfsHash,
                             uint _approverId,
                             uint[] memory _tokenAmounts,
                             uint _amount)
@@ -582,7 +573,7 @@ contract EthlanceJobs {
     senderIsValid(_sender)
   {
     // first fulfills the job on behalf of the fulfillers
-    fulfillJob(_sender, _jobId, _fulfillers, _data, _amount);
+    fulfillJob(_sender, _jobId, _fulfillers, _ipfsHash, _amount);
 
     // then accepts the fulfillment
     acceptFulfillment(_sender,
@@ -600,23 +591,23 @@ contract EthlanceJobs {
   /// @param _issuerId the index of the issuer who is calling the function
   /// @param _issuers the new array of addresses who will be the issuers of the job
   /// @param _approvers the new array of addresses who will be the approvers of the job
-  /// @param _data the new IPFS hash representing the JSON object storing the details of the job (see docs for schema details)
+  /// @param _ipfsHash the new IPFS hash representing the JSON object storing the details of the job (see docs for schema details)
   function changeJob(
                      address _sender,
                      uint _jobId,
                      uint _issuerId,
                      address payable[] memory _issuers,
                      address payable[] memory _approvers,
-                     string memory _data
+                     string memory _ipfsHash
                      )
     public
     senderIsValid(_sender)
   {
-    require(_jobId < numJobs); // makes the validateJobArrayIndex modifier in-line to avoid stack too deep errors
-    require(_issuerId < jobs[_jobId].issuers.length); // makes the validateIssuerArrayIndex modifier in-line to avoid stack too deep errors
-    require(_sender == jobs[_jobId].issuers[_issuerId]); // makes the onlyIssuer modifier in-line to avoid stack too deep errors
+    require(_jobId < numJobs, "Job id can't be bigger than numJobs"); // makes the validateJobArrayIndex modifier in-line to avoid stack too deep errors
+    require(_issuerId < jobs[_jobId].issuers.length, "Issuer id can be bigger than number of issuers"); // makes the validateIssuerArrayIndex modifier in-line to avoid stack too deep errors
+    require(_sender == jobs[_jobId].issuers[_issuerId], "Sender should be a issuer"); // makes the onlyIssuer modifier in-line to avoid stack too deep errors
 
-    require(_issuers.length > 0 || _approvers.length > 0); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
+    require(_issuers.length > 0 || _approvers.length > 0, "Need at leaset 1 issuer or approver"); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
 
     jobs[_jobId].issuers = _issuers;
     jobs[_jobId].approvers = _approvers;
@@ -624,7 +615,7 @@ contract EthlanceJobs {
                     _sender,
                     _issuers,
                     _approvers,
-                    _data);
+                    _ipfsHash);
   }
 
   /// @dev changeIssuer(): Allows any of the issuers to change a particular issuer of the job
@@ -645,7 +636,7 @@ contract EthlanceJobs {
     validateIssuerArrayIndex(_jobId, _issuerIdToChange)
     onlyIssuer(_sender, _jobId, _issuerId)
   {
-    require(_issuerId < jobs[_jobId].issuers.length || _issuerId == 0);
+    require(_issuerId < jobs[_jobId].issuers.length || _issuerId == 0, "Issuer id can't be bigger than number of issuers for the job");
 
     jobs[_jobId].issuers[_issuerIdToChange] = _newIssuer;
 
@@ -679,19 +670,19 @@ contract EthlanceJobs {
   /// @param _sender the sender of the transaction issuing the job (should be the same as msg.sender unless the txn is called by the meta tx relayer)
   /// @param _jobId the index of the job
   /// @param _issuerId the index of the issuer who is calling the function
-  /// @param _data the new IPFS hash representing the JSON object storing the details of the job (see docs for schema details)
+  /// @param _ipfsHash the new IPFS hash representing the JSON object storing the details of the job (see docs for schema details)
   function changeData(
                       address _sender,
                       uint _jobId,
                       uint _issuerId,
-                      string memory _data)
+                      string memory _ipfsHash)
     public
     senderIsValid(_sender)
     validateJobArrayIndex(_jobId)
     validateIssuerArrayIndex(_jobId, _issuerId)
     onlyIssuer(_sender, _jobId, _issuerId)
   {
-    emit JobDataChanged(_jobId, _sender, _data); // The new _data is emitted within an event rather than being stored on-chain for minimized gas costs
+    emit JobDataChanged(_jobId, _sender, _ipfsHash); // The new _ipfsHash is emitted within an event rather than being stored on-chain for minimized gas costs
   }
 
 
@@ -734,7 +725,7 @@ contract EthlanceJobs {
     validateIssuerArrayIndex(_jobId, _issuerId)
     onlyIssuer(_sender, _jobId, _issuerId)
   {
-    require(_issuers.length > 0 || jobs[_jobId].approvers.length > 0); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
+    require(_issuers.length > 0 || jobs[_jobId].approvers.length > 0, "Need at least on issuer or approver"); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
 
     jobs[_jobId].issuers = _issuers;
 
@@ -780,7 +771,7 @@ contract EthlanceJobs {
     validateIssuerArrayIndex(_jobId, _issuerId)
     onlyIssuer(_sender, _jobId, _issuerId)
   {
-    require(jobs[_jobId].issuers.length > 0 || _approvers.length > 0); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
+    require(jobs[_jobId].issuers.length > 0 || _approvers.length > 0,"Need at least one issuer or approver"); // Ensures there's at least 1 issuer or approver, so funds don't get stuck
     jobs[_jobId].approvers = _approvers;
 
     emit JobApproversUpdated(_jobId, _sender, jobs[_jobId].approvers);
@@ -802,21 +793,21 @@ contract EthlanceJobs {
     internal
   {
     if (jobs[_jobId].tokenVersion == 0){
-      require(_amount > 0); // Sending 0 tokens should throw
-      require(jobs[_jobId].balance >= _amount);
+      require(_amount > 0, "Insufficient amount"); // Sending 0 tokens should throw
+      require(jobs[_jobId].balance >= _amount, "Balance for the job shuold be bigger than amount");
 
       jobs[_jobId].balance = jobs[_jobId].balance.sub(_amount);
 
       _to.transfer(_amount);
     } else if (jobs[_jobId].tokenVersion == 20){
-      require(_amount > 0); // Sending 0 tokens should throw
-      require(jobs[_jobId].balance >= _amount);
+      require(_amount > 0, "Insufficient amout"); // Sending 0 tokens should throw
+      require(jobs[_jobId].balance >= _amount, "Balance for the job shuold be bigger than amount");
 
       jobs[_jobId].balance = jobs[_jobId].balance.sub(_amount);
 
-      require(IERC20(jobs[_jobId].token).transfer(_to, _amount));
+      require(IERC20(jobs[_jobId].token).transfer(_to, _amount),"Couldn't transfer ERC20");
     } else if (jobs[_jobId].tokenVersion == 721){
-      require(tokenBalances[_jobId][_amount]);
+      require(tokenBalances[_jobId][_amount],"No token balance for the job");
 
       tokenBalances[_jobId][_amount] = false; // Removes the 721 token from the balance of the job
 
@@ -832,20 +823,20 @@ contract EthlanceJobs {
    * Events
    */
 
-  event JobIssued(uint _jobId, address payable _creator, address payable[] _issuers, address[] _approvers, string _data, address _token, uint _tokenVersion);
+  event JobIssued(uint _jobId, address payable _creator, address payable[] _issuers, address[] _approvers, string _ipfsHash, address _token, uint _tokenVersion);
   event ContributionAdded(uint _jobId, uint _contributionId, address payable _contributor, uint _amount);
   event ContributionRefunded(uint _jobId, uint _contributionId);
   event ContributionsRefunded(uint _jobId, address _issuer, uint[] _contributionIds);
   event JobDrained(uint _jobId, address _issuer, uint[] _amounts);
-  event ActionPerformed(uint _jobId, address _fulfiller, string _data);
-  event JobFulfilled(uint _jobId, uint _fulfillmentId, address payable[] _fulfillers, string _data, address _submitter, uint _amount);
-  event FulfillmentUpdated(uint _jobId, uint _fulfillmentId, address payable[] _fulfillers, string _data);
+  event ActionPerformed(uint _jobId, address _fulfiller, string _ipfsHash);
+  event JobFulfilled(uint _jobId, uint _fulfillmentId, address payable[] _fulfillers, string _ipfsHash, address _submitter, uint _amount);
+  event FulfillmentUpdated(uint _jobId, uint _fulfillmentId, address payable[] _fulfillers, string _ipfsHash);
   event FulfillmentAccepted(uint _jobId, uint  _fulfillmentId, address _approver, uint[] _tokenAmounts);
-  event JobChanged(uint _jobId, address _changer, address payable[] _issuers, address payable[] _approvers, string _data);
+  event JobChanged(uint _jobId, address _changer, address payable[] _issuers, address payable[] _approvers, string _ipfsHash);
   event JobIssuersUpdated(uint _jobId, address _changer, address payable[] _issuers);
   event JobApproversUpdated(uint _jobId, address _changer, address[] _approvers);
-  event JobDataChanged(uint _jobId, address _changer, string _data);
+  event JobDataChanged(uint _jobId, address _changer, string _ipfsHash);
 
-  event CandidateSelected(uint jobId, address candidate);
+  event CandidateAccepted(uint jobId, address candidate);
   event CandidateApplied(uint jobId, address candidate);
 }
